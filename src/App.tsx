@@ -711,6 +711,10 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                   إضافة أول نقوط
                 </button>
               </div>
+            )}
+          </div>
+        )}
+
         {/* Import Excel Modal */}
         {showImportExcel && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -741,7 +745,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                       className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none"
                     />
                   </div>
-            )}
+
                   <div className="flex gap-3 mt-6">
                     <button
                       type="button"
@@ -777,13 +781,13 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     </div>
                     <h4 className="font-semibold text-slate-800">نتائج الاستيراد</h4>
                   </div>
-          </div>
+
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-green-700">
                       <strong>تم استيراد {importResults.success} نقوط بنجاح</strong>
                     </p>
                   </div>
-        )}
+
                   {importResults.errors.length > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                       <p className="text-red-700 font-medium mb-2">الأخطاء ({importResults.errors.length}):</p>
