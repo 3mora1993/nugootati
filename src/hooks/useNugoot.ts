@@ -153,14 +153,17 @@ export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' |
             .eq('direction', 'incoming')
             .eq('name', nugootToDelete.name);
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('Error updating reciprocated status:', updateError);
+            // لا نرمي الخطأ هنا لأن الحذف تم بنجاح
+          }
         }
       }
 
       setNugoot(prev => prev.filter(item => item.id !== id));
       
-      // إعادة جلب البيانات لتحديث الحالة
-      await fetchNugoot();
+      // إعادة جلب البيانات لتحديث الحالة (بدون انتظار لتجنب التأخير)
+      fetchNugoot().catch(console.error);
     } catch (err: any) {
       setError(err.message);
       throw err;
