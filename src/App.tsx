@@ -12,6 +12,7 @@ import {
   Edit, 
   Trash2, 
   Download,
+  Upload,
   ArrowLeft,
   Clock,
   Check,
@@ -38,6 +39,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddNugoot, setShowAddNugoot] = useState(false);
+  const [showImportExcel, setShowImportExcel] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingNugoot, setEditingNugoot] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +61,12 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
     direction: 'incoming' as 'incoming' | 'outgoing'
   });
 
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResults, setImportResults] = useState<{
+    success: number;
+    errors: string[];
+  } | null>(null);
   const eventTypes = ['عرس', 'خطوبة', 'عقيقة', 'تخرج', 'عيد ميلاد', 'أخرى'];
 
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -246,6 +254,93 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
     setEditingEvent(null);
   };
 
+  const handleImportExcel = async () => {
+    if (!importFile || !selectedEvent) return;
+
+    setImportLoading(true);
+    setImportResults(null);
+
+    try {
+      const data = await importFile.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < jsonData.length; i++) {
+        const row = jsonData[i] as any;
+        const rowNumber = i + 2; // +2 because Excel rows start at 1 and we skip header
+
+        try {
+          // التحقق من البيانات المطلوبة
+          const name = row['الاسم'] || row['Name'] || row['name'];
+          if (!name) {
+            errors.push(`الصف ${rowNumber}: الاسم مطلوب`);
+            continue;
+          }
+
+          // تحديد النوع
+          const typeValue = row['النوع'] || row['Type'] || row['type'] || 'نقد';
+          const type = typeValue.toLowerCase().includes('هدية') || typeValue.toLowerCase().includes('gift') ? 'gift' : 'cash';
+
+          // تحديد المبلغ
+          let amount = '';
+          if (type === 'cash') {
+            const amountValue = row['المبلغ'] || row['Amount'] || row['amount'] || 0;
+            amount = amountValue.toString();
+          }
+
+          // تحديد الاتجاه
+          const directionValue = row['الاتجاه'] || row['Direction'] || row['direction'] || 'وارد';
+          const direction = directionValue.toLowerCase().includes('صادر') || directionValue.toLowerCase().includes('outgoing') ? 'outgoing' : 'incoming';
+
+          // تحديد التاريخ
+          let date = new Date().toISOString().split('T')[0];
+          if (row['التاريخ'] || row['Date'] || row['date']) {
+            const dateValue = row['التاريخ'] || row['Date'] || row['date'];
+            if (dateValue instanceof Date) {
+              date = dateValue.toISOString().split('T')[0];
+            } else if (typeof dateValue === 'string') {
+              const parsedDate = new Date(dateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                date = parsedDate.toISOString().split('T')[0];
+              }
+            }
+          }
+
+          // إضافة النقوط
+          await addNugoot({
+            event_id: selectedEvent.id,
+            name: name.toString(),
+            amount,
+            type,
+            gift_description: row['وصف الهدية'] || row['Gift Description'] || row['gift_description'] || '',
+            notes: row['ملاحظات'] || row['Notes'] || row['notes'] || '',
+            date,
+            direction
+          });
+
+          successCount++;
+        } catch (error: any) {
+          errors.push(`الصف ${rowNumber}: ${error.message}`);
+        }
+      }
+
+      setImportResults({ success: successCount, errors });
+    } catch (error: any) {
+      setImportResults({ success: 0, errors: [`خطأ في قراءة الملف: ${error.message}`] });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const resetImportForm = () => {
+    setImportFile(null);
+    setImportResults(null);
+  };
   // Get filtered nugoot based on current view
   const getDisplayNugoot = () => {
     if (currentView === 'global-outgoing') {
@@ -440,17 +535,34 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
 
             {/* Controls */}
             <div className="space-y-3 mb-4">
-              <button
-                onClick={() => {
-                  resetForm();
-                 setNugootForm(prev => ({ ...prev, direction: 'outgoing' }));
-                  setShowAddNugoot(true);
-                }}
-                className="w-full bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
-              >
-                <Plus size={20} />
-                إضافة نقوط
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    resetForm();
+                    if (currentView === 'global-outgoing') {
+                      setNugootForm(prev => ({ ...prev, direction: 'outgoing' }));
+                    }
+                    setShowAddNugoot(true);
+                  }}
+                  className="flex-1 bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <Plus size={20} />
+                  إضافة نقوط
+                </button>
+                
+                {currentView !== 'global-outgoing' && (
+                  <button
+                    onClick={() => {
+                      resetImportForm();
+                      setShowImportExcel(true);
+                    }}
+                    className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                  >
+                    <Upload size={20} />
+                    استيراد إكسل
+                  </button>
+                )}
+              </div>
 
               <div className="flex gap-2">
                 <div className="flex-1 relative">
@@ -599,7 +711,102 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                   إضافة أول نقوط
                 </button>
               </div>
+        {/* Import Excel Modal */}
+        {showImportExcel && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-lg font-semibold mb-4">استيراد النقوط من الإكسل</h3>
+              
+              {!importResults ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-800 mb-2">تنسيق الملف المطلوب:</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• <strong>الاسم</strong> (مطلوب)</li>
+                      <li>• <strong>النوع</strong> (نقد/هدية)</li>
+                      <li>• <strong>المبلغ</strong> (للنقد فقط)</li>
+                      <li>• <strong>الاتجاه</strong> (وارد/صادر)</li>
+                      <li>• <strong>التاريخ</strong> (اختياري)</li>
+                      <li>• <strong>وصف الهدية</strong> (اختياري)</li>
+                      <li>• <strong>ملاحظات</strong> (اختياري)</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-2">اختر ملف الإكسل</label>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none"
+                    />
+                  </div>
             )}
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowImportExcel(false);
+                        resetImportForm();
+                      }}
+                      className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={handleImportExcel}
+                      disabled={!importFile || importLoading}
+                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {importLoading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          استيراد
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold mb-2 ${importResults.success > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {importResults.success > 0 ? '✅' : '❌'}
+                    </div>
+                    <h4 className="font-semibold text-slate-800">نتائج الاستيراد</h4>
+                  </div>
+          </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-green-700">
+                      <strong>تم استيراد {importResults.success} نقوط بنجاح</strong>
+                    </p>
+                  </div>
+        )}
+                  {importResults.errors.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-red-700 font-medium mb-2">الأخطاء ({importResults.errors.length}):</p>
+                      <div className="max-h-32 overflow-y-auto">
+                        {importResults.errors.map((error, index) => (
+                          <p key={index} className="text-red-600 text-sm">• {error}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setShowImportExcel(false);
+                      resetImportForm();
+                    }}
+                    className="w-full bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
