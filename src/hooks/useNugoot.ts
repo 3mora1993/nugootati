@@ -115,6 +115,16 @@ export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' |
 
   const deleteNugoot = async (id: string) => {
     try {
+      // جلب معلومات النقوط قبل حذفه
+      const { data: nugootToDelete, error: fetchError } = await supabase
+        .from('nugoot')
+        .select('name, direction')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from('nugoot')
         .delete()
@@ -122,7 +132,35 @@ export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' |
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // إذا كان النقوط المحذوف صادراً، تحقق من وجود نقوط صادر آخر لنفس الشخص
+      if (nugootToDelete.direction === 'outgoing') {
+        const { count, error: countError } = await supabase
+          .from('nugoot')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('direction', 'outgoing')
+          .eq('name', nugootToDelete.name);
+
+        if (countError) throw countError;
+
+        // إذا لم يعد هناك أي نقوط صادر لهذا الشخص، إزالة علامة "تم الرد عليه"
+        if (count === 0) {
+          const { error: updateError } = await supabase
+            .from('nugoot')
+            .update({ reciprocated_at: null })
+            .eq('user_id', user.id)
+            .eq('direction', 'incoming')
+            .eq('name', nugootToDelete.name);
+
+          if (updateError) throw updateError;
+        }
+      }
+
       setNugoot(prev => prev.filter(item => item.id !== id));
+      
+      // إعادة جلب البيانات لتحديث الحالة
+      await fetchNugoot();
     } catch (err: any) {
       setError(err.message);
       throw err;
