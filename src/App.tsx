@@ -26,7 +26,7 @@ import * as XLSX from 'xlsx';
 import AuthWrapper from './components/AuthWrapper';
 import { useEvents } from './hooks/useEvents';
 import { useNugoot } from './hooks/useNugoot';
-
+import { Event } from './lib/supabase.tsx';
 const App: React.FC = () => {
   return (
     <AuthWrapper>
