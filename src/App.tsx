@@ -741,33 +741,39 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-2">الاتجاه</label>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setNugootForm({ ...nugootForm, direction: 'incoming' })}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          nugootForm.direction === 'incoming'
-                            ? 'bg-green-600 text-white border-green-600'
-                            : 'border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        وارد ↓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNugootForm({ ...nugootForm, direction: 'outgoing' })}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          nugootForm.direction === 'outgoing'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        صادر ↑
-                      </button>
+                  {/* إظهار خيار الاتجاه فقط في الحالات التالية:
+                      1. عند التعديل على نقوط موجود
+                      2. عند إضافة نقوط في النقوط الصادر العام
+                      3. عند الرد بالمثل (direction = outgoing) */}
+                  {(editingNugoot || currentView === 'global-outgoing' || nugootForm.direction === 'outgoing') && (
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-2">الاتجاه</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNugootForm({ ...nugootForm, direction: 'incoming' })}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            nugootForm.direction === 'incoming'
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          وارد ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNugootForm({ ...nugootForm, direction: 'outgoing' })}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            nugootForm.direction === 'outgoing'
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          صادر ↑
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <label className="block text-slate-700 font-medium mb-2">التاريخ</label>
