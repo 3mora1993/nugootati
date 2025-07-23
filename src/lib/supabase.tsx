@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AuthWrapper from '../components/AuthWrapper';
-import { useEvents } from './hooks/useEvents';
-import { useNugoot } from './hooks/useNugoot';
+import { useEvents } from '../hooks/useEvents';
+import { useNugoot } from '../hooks/useNugoot';
 import { Event } from './lib/supabase';
 import { 
   Plus, 
