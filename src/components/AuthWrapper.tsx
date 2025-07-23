@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import supabase from '../lib/supabase.tsx';
+import { supabase } from '../lib/supabase.tsx';
 import { User } from '@supabase/supabase-js';
 import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 

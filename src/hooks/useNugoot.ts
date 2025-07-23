@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import supabase, { Nugoot } from '../lib/supabase.tsx';
+import { supabase, Nugoot } from '../lib/supabase.tsx';
 import { User } from '@supabase/supabase-js';
 
 export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' | 'outgoing') => {
