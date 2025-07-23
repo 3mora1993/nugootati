@@ -42,7 +42,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
   const [editingNugoot, setEditingNugoot] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [filterDirection, setFilterDirection] = useState<'all' | 'incoming' | 'outgoing'>('all');
+  const [filterDirection, setFilterDirection] = useState<'all' | 'incoming' | 'outgoing'>('incoming');
 
   const [eventForm, setEventForm] = useState({
     name: '',
@@ -292,7 +292,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                   setCurrentView('events');
                   setSelectedEvent(null);
                   setSearchTerm('');
-                  setFilterDirection('all');
+                  setFilterDirection('incoming');
                 }}
                 className="p-2 hover:bg-slate-500 rounded-lg transition-colors"
               >
@@ -481,7 +481,6 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     onChange={(e) => setFilterDirection(e.target.value as 'all' | 'incoming' | 'outgoing')}
                     className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none"
                   >
-                    <option value="all">الكل</option>
                     <option value="incoming">وارد</option>
                     <option value="outgoing">صادر</option>
                   </select>
