@@ -404,14 +404,6 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                 <p className="text-slate-200 text-sm">إدارة النقوط والهدايا</p>
               )}
             </div>
-            {currentView !== 'events' && (
-              <button
-                onClick={exportToExcel}
-                className="p-2 hover:bg-slate-500 rounded-lg transition-colors"
-              >
-                <Download size={20} />
-              </button>
-            )}
           </div>
         </div>
 
@@ -535,7 +527,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
 
             {/* Controls */}
             <div className="space-y-3 mb-4">
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
                     resetForm();
@@ -544,13 +536,23 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     }
                     setShowAddNugoot(true);
                   }}
-                  className="flex-1 bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                  className="bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
                 >
                   <Plus size={20} />
                   إضافة نقوط
                 </button>
                 
-                {currentView !== 'global-outgoing' && (
+                <button
+                  onClick={exportToExcel}
+                  className="bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <Download size={20} />
+                  تصدير إكسل
+                </button>
+              </div>
+
+              {currentView !== 'global-outgoing' && (
+                <div className="flex gap-2">
                   <button
                     onClick={() => {
                       resetImportForm();
@@ -561,8 +563,8 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     <Upload size={20} />
                     استيراد إكسل
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <div className="flex-1 relative">
