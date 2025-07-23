@@ -443,6 +443,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
               <button
                 onClick={() => {
                   resetForm();
+                 setNugootForm(prev => ({ ...prev, direction: 'outgoing' }));
                   setShowAddNugoot(true);
                 }}
                 className="w-full bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
@@ -743,9 +744,8 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
 
                   {/* إظهار خيار الاتجاه فقط في الحالات التالية:
                       1. عند التعديل على نقوط موجود
-                      2. عند إضافة نقوط في النقوط الصادر العام
-                      3. عند الرد بالمثل (direction = outgoing) */}
-                  {(editingNugoot || currentView === 'global-outgoing' || nugootForm.direction === 'outgoing') && (
+                     2. عند الرد بالمثل (direction = outgoing) */}
+                  {(editingNugoot || nugootForm.direction === 'outgoing') && currentView !== 'global-outgoing' && (
                     <div>
                       <label className="block text-slate-700 font-medium mb-2">الاتجاه</label>
                       <div className="flex gap-2">
