@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, Event } from '../lib/supabase.tsx';
+import supabase, { Event } from '../lib/supabase.tsx';
 import { User } from '@supabase/supabase-js';
 
 export const useEvents = (user: User) => {
