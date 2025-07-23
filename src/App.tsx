@@ -570,13 +570,13 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                     
                     <div className="flex items-center gap-1 text-slate-400">
                       <Clock size={12} />
-                      <span>{new Date(nugootItem.date).toLocaleDateString('ar-SA')}</span>
+                      <span>{new Date(nugootItem.date).toLocaleDateString('ar')}</span>
                     </div>
 
                     {nugootItem.reciprocated_at && (
                       <div className="flex items-center gap-1 text-green-600 text-xs">
                         <Check size={12} />
-                        <span>تم الرد في: {new Date(nugootItem.reciprocated_at).toLocaleDateString('ar-SA')}</span>
+                        <span>تم الرد في: {new Date(nugootItem.reciprocated_at).toLocaleDateString('ar')}</span>
                       </div>
                     )}
                   </div>
