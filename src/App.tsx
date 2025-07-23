@@ -103,7 +103,7 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
     e.preventDefault();
     try {
       const nugootData = {
-        event_id: currentView === 'global-outgoing' ? undefined : selectedEvent?.id,
+        event_id: nugootForm.direction === 'outgoing' ? undefined : selectedEvent?.id,
         ...nugootForm
       };
       await addNugoot(nugootData);
