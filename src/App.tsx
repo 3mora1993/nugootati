@@ -33,9 +33,9 @@ const App: React.FC = () => {
 
 const MainApp: React.FC<{ user: User }> = ({ user }) => {
   const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents(user);
-  const { nugoot, addNugoot, updateNugoot, deleteNugoot, getEventNugoot, getFilteredNugoot, getStatistics, getIncomingNames, getGlobalOutgoingNugoot, getGlobalOutgoingStatistics } = useNugoot(user);
+  const { nugoot, addNugoot, updateNugoot, deleteNugoot, getEventNugoot, getFilteredNugoot, getStatistics, getIncomingNames, getGlobalOutgoingNugoot, getGlobalOutgoingStatistics, getPersonBalances } = useNugoot(user);
 
-  const [currentView, setCurrentView] = useState<'events' | 'event-detail' | 'global-outgoing'>('events');
+  const [currentView, setCurrentView] = useState<'events' | 'event-detail' | 'global-outgoing' | 'person-balances'>('events');
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddNugoot, setShowAddNugoot] = useState(false);
@@ -410,19 +410,28 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
         {/* Events List View */}
         {currentView === 'events' && (
           <div className="p-4">
-            <div className="flex gap-2 mb-4">
+            <div className="space-y-2 mb-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddEvent(true)}
+                  className="flex-1 bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <Plus size={20} />
+                  إضافة مناسبة
+                </button>
+                <button
+                  onClick={() => setCurrentView('global-outgoing')}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                >
+                  النقوط الصادر العام
+                </button>
+              </div>
               <button
-                onClick={() => setShowAddEvent(true)}
-                className="flex-1 bg-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                onClick={() => setCurrentView('person-balances')}
+                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2"
               >
-                <Plus size={20} />
-                إضافة مناسبة
-              </button>
-              <button
-                onClick={() => setCurrentView('global-outgoing')}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
-              >
-                النقوط الصادر العام
+                <TrendingUp size={20} />
+                أرصدة الأشخاص (مدين/دائن)
               </button>
             </div>
 
@@ -490,6 +499,116 @@ const MainApp: React.FC<{ user: User }> = ({ user }) => {
                 >
                   إضافة أول مناسبة
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Person Balances View */}
+        {currentView === 'person-balances' && (
+          <div className="p-4">
+            {/* Summary Statistics */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {(() => {
+                const balances = getPersonBalances();
+                const totalCreditors = balances.filter(p => p.balance > 0).length;
+                const totalDebtors = balances.filter(p => p.balance < 0).length;
+                const totalCreditAmount = balances.filter(p => p.balance > 0).reduce((sum, p) => sum + p.balance, 0);
+                const totalDebtAmount = Math.abs(balances.filter(p => p.balance < 0).reduce((sum, p) => sum + p.balance, 0));
+                
+                return (
+                  <>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                      <div className="text-green-600 font-bold text-lg">{totalCreditors}</div>
+                      <div className="text-green-700 text-sm">مدين لك</div>
+                    </div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                      <div className="text-red-600 font-bold text-lg">{totalDebtors}</div>
+                      <div className="text-red-700 text-sm">مدين عليك</div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                      <div className="text-blue-600 font-bold text-lg">{totalCreditAmount} ₪</div>
+                      <div className="text-blue-700 text-sm">إجمالي المدين لك</div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+                      <div className="text-orange-600 font-bold text-lg">{totalDebtAmount} ₪</div>
+                      <div className="text-orange-700 text-sm">إجمالي المدين عليك</div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Search */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute right-3 top-3 text-slate-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="البحث بالاسم..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pr-10 pl-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Balances List */}
+            <div className="space-y-3">
+              {getPersonBalances()
+                .filter(person => person.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((person) => (
+                <div
+                  key={person.name}
+                  className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-slate-800">{person.name}</h4>
+                    <div className={`text-lg font-bold ${
+                      person.balance > 0 ? 'text-green-600' : 
+                      person.balance < 0 ? 'text-red-600' : 'text-slate-600'
+                    }`}>
+                      {person.balance > 0 ? '+' : ''}{person.balance} ₪
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                      <div className="text-green-600 font-semibold">{person.incoming} ₪</div>
+                      <div className="text-green-700 text-xs">وارد ({person.incomingCount})</div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
+                      <div className="text-blue-600 font-semibold">{person.outgoing} ₪</div>
+                      <div className="text-blue-700 text-xs">صادر ({person.outgoingCount})</div>
+                    </div>
+                  </div>
+
+                  <div className={`text-center text-sm font-medium px-3 py-1 rounded-full ${
+                    person.balance > 0 ? 'bg-green-100 text-green-700' :
+                    person.balance < 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    {person.balance > 0 ? `مدين لك ${person.balance} ₪` :
+                     person.balance < 0 ? `مدين عليك ${Math.abs(person.balance)} ₪` :
+                     'متوازن'}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {getPersonBalances().filter(person => person.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+              <div className="text-center py-12">
+                <Users className="mx-auto text-slate-400 mb-4" size={48} />
+                <p className="text-slate-600 mb-4">
+                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد أرصدة بعد'}
+                </p>
+                {!searchTerm && (
+                  <button
+                    onClick={() => setCurrentView('events')}
+                    className="bg-slate-600 text-white px-6 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    إضافة مناسبة أولاً
+                  </button>
+                )}
               </div>
             )}
           </div>

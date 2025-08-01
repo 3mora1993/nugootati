@@ -243,6 +243,46 @@ export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' |
     };
   };
 
+  const getPersonBalances = () => {
+    // جمع كل النقوط النقدية فقط
+    const cashNugoot = nugoot.filter(n => n.type === 'cash' && n.amount);
+    
+    // تجميع النقوط حسب الاسم
+    const balanceMap = new Map<string, {
+      name: string;
+      incoming: number;
+      outgoing: number;
+      balance: number;
+      incomingCount: number;
+      outgoingCount: number;
+    }>();
+
+    cashNugoot.forEach(n => {
+      if (!balanceMap.has(n.name)) {
+        balanceMap.set(n.name, {
+          name: n.name,
+          incoming: 0,
+          outgoing: 0,
+          balance: 0,
+          incomingCount: 0,
+          outgoingCount: 0
+        });
+      }
+
+      const person = balanceMap.get(n.name)!;
+      if (n.direction === 'incoming') {
+        person.incoming += n.amount || 0;
+        person.incomingCount++;
+      } else {
+        person.outgoing += n.amount || 0;
+        person.outgoingCount++;
+      }
+      person.balance = person.incoming - person.outgoing;
+    });
+
+    // تحويل إلى مصفوفة وترتيب حسب الرصيد (الأعلى أولاً)
+    return Array.from(balanceMap.values()).sort((a, b) => b.balance - a.balance);
+  };
   useEffect(() => {
     fetchNugoot();
   }, [user.id, eventId, direction]);
@@ -260,6 +300,7 @@ export const useNugoot = (user: User, eventId?: string, direction?: 'incoming' |
     getIncomingNames,
     getGlobalOutgoingNugoot,
     getGlobalOutgoingStatistics,
+    getPersonBalances,
     markIncomingNugootAsReciprocated,
     refetch: fetchNugoot
   };
